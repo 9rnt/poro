@@ -13,6 +13,7 @@ def getELB():
     response = client.describe_load_balancers()
     loadBalancers=response['LoadBalancers']
     
+    # check if loadbalancer is internet facing
     for elb in loadBalancers:
         if elb['Scheme']=='internet-facing':
             publicLoadbalancers.append({elb['LoadBalancerArn']:[elb['DNSName'],elb['SecurityGroups']]})

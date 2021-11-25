@@ -2,7 +2,7 @@ import boto3
 import botocore
 
 # returns a list of publicly accessible EC2
-# returns {instanceID:[instance public IP, public security group]}
+# returns [{instanceID:[instance public IP, public security group]}]
 
 def listPublicEC2():
     publicInbound=['0.0.0.0/0','0.0.0.0/8','0.0.0.0/16','0.0.0.0/24','0.0.0.0/32','::/0','::/16','::/32','::/48','::/64']
@@ -27,6 +27,3 @@ def listPublicEC2():
                     publicEC2.append({instance.id:[instance.public_ip_address,sgIsPublic]})
 
     return publicEC2
-
-publicEC2=listPublicEC2()
-print(publicEC2)
