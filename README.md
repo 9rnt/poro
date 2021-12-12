@@ -11,7 +11,7 @@ Services covered by this tool:
 - EC2 instances
 - Redshift Databases
 
-## Prequisities
+## Prequisites
 - AWS account with Read Only Access to services listed above.
 - Python 3.X
 - Boto3 > 1.2X
