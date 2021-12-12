@@ -21,7 +21,7 @@ def listPublicDB():
             localRDS = client.describe_db_instances()['DBInstances']
             for lRDS in localRDS:
                 # check if RDS DB is publicly accessible
-                if (not(lRDS['PubliclyAccessible'])):
+                if (lRDS['PubliclyAccessible']):
                     # check if the RDS DB is reachable from the internet through VPC SG or DB SG (some false positive may appear)
                     resource=boto3.resource('ec2')
                     for securitygroup in lRDS['DBSecurityGroups']:

@@ -1,5 +1,6 @@
 import boto3
 import botocore
+from modules.test_endpoint import isEndPointUp
 
 # Returns a list of public APIs
 # Takes a region as an argument
@@ -22,8 +23,10 @@ def listAPI():
                     stages=client.get_stages(restApiId=api.get("id")).get("item")
                     endpoints=[]
                     for stage in stages:
-                        endpoints.append("https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+"/")
-                    public_API.append([api.get("id"),region,endpoints])
+                        endpoint="https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+"/"
+                        if isEndPointUp(endpoint):
+                            endpoints.append("https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+"/")
+                            public_API.append([api.get("id"),region,endpoints])
         except botocore.exceptions.ClientError as e :
             print("Unexpected error when scanning apigateway in the region %s: %s" %(region, e.response['Error']['Message']))
 

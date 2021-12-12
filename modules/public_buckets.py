@@ -32,11 +32,11 @@ def listPublicBuckets():
                 publicAcl=True
                 publicPolicy=True
             else :
-                print("unexpected error: %s" % (e.response))
+                code=e.response.get("Error").get("Code")
+                print(f"unexpected error with bucket {bucket['Name']}: {code}")
 
         # Check if the bucket ACL allows public access
         if (publicAcl):
-            acl=client.get_bucket_acl(Bucket=bucket['Name'])
             try:
                 acl=client.get_bucket_acl(Bucket=bucket['Name'])
                 isACLPublic=False
@@ -48,12 +48,17 @@ def listPublicBuckets():
                     publicBuckets.append([bucket['Name'],'Public ACL'])
 
             except botocore.exceptions.ClientError as e :
-                print("unexpected error: %s" % (e.response))
+                code=e.response.get("Error").get("Code")
+                print(f"unexpected error with bucket {bucket['Name']}: {code}")
 
         # Check if the Bucket policy allows public access
         if(publicPolicy):
-            policy=client.get_bucket_policy_status(Bucket=bucket['Name'])
-            if(policy['PolicyStatus']['IsPublic']):
-                publicBuckets.append([bucket['Name'],'Public Policy'])
+            try:
+                policy=client.get_bucket_policy_status(Bucket=bucket['Name'])
+                if(policy['PolicyStatus']['IsPublic']):
+                    publicBuckets.append([bucket['Name'],'Public Policy'])
+            except botocore.exceptions.ClientError as e :
+                code=e.response.get("Error").get("Code")
+                print(f"unexpected error with bucket {bucket['Name']}: {code}")
 
     return publicBuckets
