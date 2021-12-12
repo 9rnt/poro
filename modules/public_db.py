@@ -2,7 +2,7 @@ import boto3
 import botocore
 
 # returns a list of publicly accessible EC2
-# returns [{DB Instance Identifier:[DB region,the attached public sg]}]
+# returns [[DB Instance Identifier,[DB region,the attached public sg]]]
 
 def listPublicDB():
     publicInbound=['0.0.0.0/0','0.0.0.0/8','0.0.0.0/16','0.0.0.0/24','0.0.0.0/32','::/0','::/16','::/32','::/48','::/64']
@@ -32,7 +32,7 @@ def listPublicDB():
                                 if(authorizedIps['CidrIp'] in publicInbound):
                                     sgIsPublic=securitygroup['DBSecurityGroupId']
                         if sgIsPublic:
-                            publicDB.append({lRDS['DBInstanceIdentifier']:[region,sgIsPublic]})
+                            publicDB.append([lRDS['DBInstanceIdentifier'],[region,sgIsPublic]])
                     for securitygroup in lRDS['VpcSecurityGroups']:
                         SG=resource.SecurityGroup(securitygroup['VpcSecurityGroupId'])
                         sgIsPublic=False
@@ -41,7 +41,7 @@ def listPublicDB():
                                 if(authorizedIps['CidrIp'] in publicInbound):
                                     sgIsPublic=securitygroup['VpcSecurityGroupId']
                         if sgIsPublic:
-                            publicDB.append({lRDS['DBInstanceIdentifier']:[region,sgIsPublic]})
+                            publicDB.append([lRDS['DBInstanceIdentifier'],[region,sgIsPublic]])
 
         except botocore.exceptions.ClientError as e :
             print("Unexpected error when scanning RDS in the region %s: %s" %(region, e.response['Error']['Message']))

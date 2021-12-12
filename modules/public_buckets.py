@@ -2,7 +2,7 @@ import boto3
 import botocore
 
 # Returns a list of the names of public buckets and what makes them public in a form of a dict
-# returns [{bucket name, rational}]
+# returns [[bucket name, rational]]
 # The list may contain duplicates if a bucket contains both public ACLs and public policies
 
 def listPublicBuckets():
@@ -45,7 +45,7 @@ def listPublicBuckets():
                     if(grantee=='http://acs.amazonaws.com/groups/global/AllUsers' or grantee=='http://acs.amazonaws.com/groups/global/AuthenticatedUsers'):
                         isACLPublic=True
                 if (isACLPublic):
-                    publicBuckets.append({bucket['Name']:'Public ACL'})
+                    publicBuckets.append([bucket['Name'],'Public ACL'])
 
             except botocore.exceptions.ClientError as e :
                 print("unexpected error: %s" % (e.response))
@@ -54,6 +54,6 @@ def listPublicBuckets():
         if(publicPolicy):
             policy=client.get_bucket_policy_status(Bucket=bucket['Name'])
             if(policy['PolicyStatus']['IsPublic']):
-                publicBuckets.append({bucket['Name']:'Public Policy'})
+                publicBuckets.append([bucket['Name'],'Public Policy'])
 
     return publicBuckets
