@@ -24,7 +24,7 @@ Services covered by this tool:
 - Run python poro.py
 Poro will print all exception raised when querying AWS APIs, the scanning result will be printed at the end of the output.
 Example of Poro output:
-
+```
 o ||    o ||
   _||    __||     
  ||     \\       Let the hunt begin.
@@ -74,3 +74,4 @@ No public RDS DBs
 ======================================================
 ============= Public Redshift clusters ===============
 No public Redshift clusters
+```
