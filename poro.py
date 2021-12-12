@@ -3,6 +3,7 @@ from modules.public_api import listAPI
 from modules.public_ec2 import listPublicEC2
 from modules.elb import getELB
 from modules.public_db import listPublicDB
+from modules.public_redshift import listPublicCluster
 
 
 print("""
@@ -23,6 +24,8 @@ print("\n°° Searching for exposed ELBs °°")
 elbs=getELB()
 print("\n°° Searching for public RDS DB °°")
 dbs=listPublicDB()
+print("\n°° Searching for exposed redshift clusters °°")
+clusters=listPublicCluster()
 
 print("\n\nHunting results:")
 print("======================================================")
@@ -74,3 +77,12 @@ if dbs:
         i+=1
 else:
     print("No public RDS DBs")
+print("\n======================================================")
+print("============= Public Redshift clusters ===============")
+i=1
+if clusters:
+    for cluster in clusters:
+        print(str(i)+": Cluster id: "+cluster[0]+" -> region: "+cluster[1][0]+" -> DB Name: "+cluster[1][1]+" -> Endpoint: "+cluster[1][2]+" -> Public SG: "+cluster[1][3])
+        i+=1
+else:
+    print("No public Redshift clusters")
