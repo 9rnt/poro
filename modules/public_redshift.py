@@ -43,6 +43,6 @@ def listPublicCluster():
                             publicClusters.append([cluster['ClusterIdentifier'],[region,cluster['DBName'],cluster['Endpoint'],sgIsPublic]])
 
         except botocore.exceptions.ClientError as e:
-            print("Unexpected error when scanning RDS in the region %s: %s" %(region, e.response['Error']['Message']))
+            print("Unexpected error when scanning Redshift in the region %s: %s" %(region, e.response['Error']['Message']))
 
     return publicClusters
