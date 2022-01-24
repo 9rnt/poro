@@ -3,6 +3,7 @@
 
 ## Description
 Scan for publicly accessible assets on your AWS environment
+
 Services covered by this tool:
 - AWS ELB
 - API Gateway
