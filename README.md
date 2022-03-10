@@ -25,8 +25,11 @@ Services covered by this tool:
 - Run poro.py [-h] [--profile PROFILE] [--verbose]
 
       optional arguments:
-        -h, --help         show this help message and exit
-        --profile PROFILE  Specify the aws profile (default is default)
+        -h, --help            show this help message and exit
+        --profile PROFILE     Specify the aws profile (default is default)
+        --export FILE_NAME    Specify the file name if you want to expport the results
+        --format {human,json}
+                              Specify the formatting option (default is human)
         --verbose, -v
 
 Poro will print all exception raised when querying AWS APIs, the scanning result will be printed at the end of the output.
