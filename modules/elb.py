@@ -21,6 +21,7 @@ def getELB(log,session):
             # check if loadbalancer is internet facing
             for elb in loadBalancers:
                 if elb['Scheme']=='internet-facing':
+                    log.debug(f"[getELB] ELB data: {elb}")
                     publicLoadbalancers.append([elb['LoadBalancerArn'],[elb['DNSName'],elb['SecurityGroups']]])
         except botocore.exceptions.ClientError as e :
             log.error("[getELB] Unexpected error when scanning elbv2 in the region %s: %s" %(region, e.response['Error']['Message']))
