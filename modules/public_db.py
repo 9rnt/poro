@@ -4,7 +4,8 @@ import botocore
 # returns a list of publicly accessible EC2
 # returns [[DB Instance Identifier,[DB region,the attached public sg]]]
 
-def listPublicDB():
+def listPublicDB(log,session):
+    log.info("[listPublicDB] Start")
     publicInbound=['0.0.0.0/0','0.0.0.0/8','0.0.0.0/16','0.0.0.0/24','0.0.0.0/32','::/0','::/16','::/32','::/48','::/64']
 
     # Initializate public DB list
@@ -17,13 +18,13 @@ def listPublicDB():
     for region in available_regions:
         try:
             # get rds list in every region
-            client = boto3.client('rds', region_name=region)
+            client = session.client('rds', region_name=region)
             localRDS = client.describe_db_instances()['DBInstances']
             for lRDS in localRDS:
                 # check if RDS DB is publicly accessible
                 if (lRDS['PubliclyAccessible']):
                     # check if the RDS DB is reachable from the internet through VPC SG or DB SG (some false positive may appear)
-                    resource=boto3.resource('ec2')
+                    resource=session.resource('ec2')
                     for securitygroup in lRDS['DBSecurityGroups']:
                         SG=resource.SecurityGroup(securitygroup['DBSecurityGroupId'])
                         sgIsPublic=False
@@ -44,6 +45,7 @@ def listPublicDB():
                             publicDB.append([lRDS['DBInstanceIdentifier'],[region,sgIsPublic]])
 
         except botocore.exceptions.ClientError as e :
-            print("Unexpected error when scanning RDS in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.error("[listPublicDB] Unexpected error when scanning RDS in the region %s: %s" %(region, e.response['Error']['Message']))
 
+    log.info("[listPublicDB] End")
     return publicDB

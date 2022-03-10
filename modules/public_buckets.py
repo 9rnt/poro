@@ -5,12 +5,13 @@ import botocore
 # returns [[bucket name, rational]]
 # The list may contain duplicates if a bucket contains both public ACLs and public policies
 
-def listPublicBuckets():
+def listPublicBuckets(log,session):
     # Initializate publicBuckets list
+    log.info('[listPublicBucket] Start')
     publicBuckets=[]
 
     # Get bucket list
-    client = boto3.client('s3')
+    client = session.client('s3')
     response = client.list_buckets()
     buckets = response['Buckets']
 
@@ -33,7 +34,7 @@ def listPublicBuckets():
                 publicPolicy=True
             else :
                 code=e.response.get("Error").get("Code")
-                print(f"unexpected error with bucket {bucket['Name']}: {code}")
+                log.error(f"[listPublicBucket] Unexpected error with bucket {bucket['Name']}: {code}")
 
         # Check if the bucket ACL allows public access
         if (publicAcl):
@@ -49,7 +50,7 @@ def listPublicBuckets():
 
             except botocore.exceptions.ClientError as e :
                 code=e.response.get("Error").get("Code")
-                print(f"unexpected error with bucket {bucket['Name']}: {code}")
+                log.error(f"unexpected error with bucket {bucket['Name']}: {code}")
 
         # Check if the Bucket policy allows public access
         if(publicPolicy):
@@ -59,6 +60,7 @@ def listPublicBuckets():
                     publicBuckets.append([bucket['Name'],'Public Policy'])
             except botocore.exceptions.ClientError as e :
                 code=e.response.get("Error").get("Code")
-                print(f"unexpected error with bucket {bucket['Name']}: {code}")
+                log.error(f"[listPublicBucket] Unexpected error with bucket {bucket['Name']}: {code}")
 
+    log.info('[listPublicBucket] End')
     return publicBuckets

@@ -4,7 +4,8 @@ import botocore
 # returns a list of publicly accessible EC2
 # returns [[instanceID:[instance public IP, public security group]]]
 
-def listPublicEC2():
+def listPublicEC2(log,session):
+    log.info("[listPublicEC2] Start")
     publicInbound=['0.0.0.0/0','0.0.0.0/8','0.0.0.0/16','0.0.0.0/24','0.0.0.0/32','::/0','::/16','::/32','::/48','::/64']
     # Initialize ec2 list
     publicEC2=[]
@@ -14,7 +15,7 @@ def listPublicEC2():
 
     for region in available_regions:    
         # Get EC2 instances list
-        resource=boto3.resource('ec2', region_name=region)
+        resource=session.resource('ec2', region_name=region)
         try:
             instances=resource.instances.all()
             
@@ -31,6 +32,7 @@ def listPublicEC2():
                         if sgIsPublic:
                             publicEC2.append([instance.id,[region,instance.public_ip_address,sgIsPublic]])
         except botocore.exceptions.ClientError as e :
-            print("Unexpected error when scanning ec2 in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.error("[listPublicEC2] Unexpected error when scanning ec2 in the region %s: %s" %(region, e.response['Error']['Message']))
 
+    log.info("[listPublicEC2] End")
     return publicEC2

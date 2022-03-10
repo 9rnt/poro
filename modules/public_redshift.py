@@ -4,7 +4,8 @@ import botocore
 # returns a list of publicly Redshift databases
 # return [ClusterIdentifier,[region,DBName,Endpoint,Public Security Group]]
 
-def listPublicCluster():
+def listPublicCluster(log,session):
+    log.info("[listPublicCluster] Start")
     publicInbound=['0.0.0.0/0','0.0.0.0/8','0.0.0.0/16','0.0.0.0/24','0.0.0.0/32','::/0','::/16','::/32','::/48','::/64']
 
     # Initializate public clusters list
@@ -16,13 +17,13 @@ def listPublicCluster():
     for region in available_regions:
         try:
             # get redshift clusters in every region
-            client=boto3.client('redshift',region_name=region)
+            client=session.client('redshift',region_name=region)
             clusters=client.describe_clusters()['Clusters']
             for cluster in clusters:
                 # check if the cluster is publicly accessible
                 if cluster['PubliclyAccessible']:
                     # check if the VPC sg or the Cluster SG allows public connections
-                    resource=boto3.resource('ec2')
+                    resource=session.resource('ec2')
                     for securitygroup in cluster['ClusterSecurityGroups']:
                         SG=resource.SecurityGroup(securitygroup['DBSecurityGroupId'])
                         sgIsPublic=False
@@ -43,6 +44,7 @@ def listPublicCluster():
                             publicClusters.append([cluster['ClusterIdentifier'],[region,cluster['DBName'],cluster['Endpoint'],sgIsPublic]])
 
         except botocore.exceptions.ClientError as e:
-            print("Unexpected error when scanning Redshift in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.error("[listPublicCluster] Unexpected error when scanning Redshift in the region %s: %s" %(region, e.response['Error']['Message']))
 
+    log.info("[listPublicCluster] End")
     return publicClusters

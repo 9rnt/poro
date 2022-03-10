@@ -19,10 +19,16 @@ Services covered by this tool:
 - Botocore > 1.2X
 - Requests > 2.2X
 
-## How to use
+## Usage
 - Clone this repository
-- Configure your envionment with active credentials -> aws configure
-- Run python poro.py
+- Configure your envionment with active credentials -> aws configure [sso]
+- Run poro.py [-h] [--profile PROFILE] [--verbose]
+
+      optional arguments:
+        -h, --help         show this help message and exit
+        --profile PROFILE  Specify the aws profile (default is default)
+        --verbose, -v
+
 Poro will print all exception raised when querying AWS APIs, the scanning result will be printed at the end of the output.
 Example of Poro output:
 ```

@@ -6,7 +6,8 @@ from modules.test_endpoint import isEndPointUp
 # Takes a region as an argument
 # Return [{API gateway id:[endpoints]}]
 
-def listAPI():
+def listAPI(log,session):
+    log.info('[listAPI] Start')
     # Initializate API list
     public_API=[]
 
@@ -16,7 +17,7 @@ def listAPI():
     for region in available_regions:    
         try: 
             # Get classic API gateway list
-            client = boto3.client('apigateway')
+            client = session.client('apigateway')
             APIs=client.get_rest_apis().get("items")
             for api in APIs:
                 if not('PRIVATE' in api.get("endpointConfiguration").get("types")):
@@ -24,11 +25,11 @@ def listAPI():
                     endpoints=[]
                     for stage in stages:
                         endpoint="https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+"/"
-                        if isEndPointUp(endpoint):
+                        if isEndPointUp(log,endpoint):
                             endpoints.append("https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+"/")
                             public_API.append([api.get("id"),region,endpoints])
         except botocore.exceptions.ClientError as e :
-            print("Unexpected error when scanning apigateway in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.error("[listAPI] Unexpected error when scanning apigateway in the region %s: %s" %(region, e.response['Error']['Message']))
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('apigatewayv2')
@@ -36,11 +37,12 @@ def listAPI():
     for region in available_regions:    
         try:
             # Get API v2 list
-            client = boto3.client('apigatewayv2')
+            client = session.client('apigatewayv2')
             APIs=client.get_apis().get("Items")
             for api in APIs:
                 public_API.append([api.get("ApiId"),region,[api.get('ApiEndpoint')]])
         except botocore.exceptions.ClientError as e :
-            print("Unexpected error when scanning apigatewayv2 in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.error("[listAPI] Unexpected error when scanning apigatewayv2 in the region %s: %s" %(region, e.response['Error']['Message']))
 
+    log.info('[listAPI] End')
     return public_API

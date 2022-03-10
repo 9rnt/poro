@@ -3,7 +3,8 @@ import requests
 from requests.models import HTTPError
 
 
-def isEndPointUp(endpoint):
+def isEndPointUp(log,endpoint):
+    log.info("[isEndPointUp] Start")
     try:
         get=requests.get(endpoint)
     except HTTPError as http_err:
@@ -73,5 +74,5 @@ def isEndPointUp(endpoint):
     else:
         if get.status_code!='404':
             return True
-    
+    log.info("[isEndPointUp] End")
     return False
