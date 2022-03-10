@@ -9,67 +9,67 @@ import argparse
 import boto3
 
 def printForHuman(buckets,apis,ec2s,elbs,dbs,clusters):
-    print("\n\nHunting results:")
-    print("======================================================")
-    print("================= Public Buckets =====================")
+    export=f"""\nHunting results:
+    ======================================================
+    ================= Public Buckets ====================="""
     i=1
     if buckets:
         for bucket in buckets:
-            print(str(i)+": Bucket name: "+bucket[0]+" -> "+bucket[1])
+            export+=(str(i)+": Bucket name: "+bucket[0]+" -> "+bucket[1])
             i+=1
     else:
-        print("No public buckets")
-    print("\n======================================================")
-    print("================== Exposed APIs ======================")
+        export+=("No public buckets")
+    export+=("\n======================================================")
+    export+=("================== Exposed APIs ======================")
     i=1
     if apis:
         for api in apis:
-            print(str(i)+": API id: "+api[0]+" -> region: "+api[1]+" -> endpoints: ")
+            export+=(str(i)+": API id: "+api[0]+" -> region: "+api[1]+" -> endpoints: ")
             for endpoint in api[2]:
-                print("------------- "+endpoint)
+                export+=("------------- "+endpoint)
             i+=1
     else:
-        print("No public APIs")
-    print("\n======================================================")
-    print("================ Internet facing EC2 =================")
+        export+=("No public APIs")
+    export+=("\n======================================================")
+    export+=("================ Internet facing EC2 =================")
     i=1
     if ec2s:
         for ec2 in ec2s:
-            print(str(i)+": Instance id: "+ec2[0]+" -> region: "+ec2[1][0]+" -> public IP: "+ec2[1][1]+" -> security group: "+ec2[1][2])
+            export+=(str(i)+": Instance id: "+ec2[0]+" -> region: "+ec2[1][0]+" -> public IP: "+ec2[1][1]+" -> security group: "+ec2[1][2])
             i+=1
     else:
-        print("No internet facing EC2s")
-    print("\n======================================================")
-    print("==================== Exposed ELB =====================")
+        export+=("No internet facing EC2s")
+    export+=("\n======================================================")
+    export+=("==================== Exposed ELB =====================")
     i=1
     if elbs:
         for elb in elbs:
-            print(str(i)+": ELB ARN: "+elb[0]+" -> DNS: "+elb[1][0]+" -> attached security groups:")
+            export+=(str(i)+": ELB ARN: "+elb[0]+" -> DNS: "+elb[1][0]+" -> attached security groups:")
             for sg in elb[1][1]:
-                print("\n\t"+sg)
+                export+=("\n\t"+sg)
             i+=1
     else:
-        print("No exposed ELBs")
-    print("\n======================================================")
-    print("=================== Public RDS DB ====================")
+        export+=("No exposed ELBs")
+    export+=("\n======================================================")
+    export+=("=================== Public RDS DB ====================")
     i=1
     if dbs:
         for db in dbs:
-            print(str(i)+": RDS id: "+db[0]+" -> region: "+db[1][0]+" -> public IP: "+"to specify"+" -> security group: "+db[1][1])
+            export+=(str(i)+": RDS id: "+db[0]+" -> region: "+db[1][0]+" -> public IP: "+"to specify"+" -> security group: "+db[1][1])
             i+=1
     else:
-        print("No public RDS DBs")
-    print("\n======================================================")
-    print("============= Public Redshift clusters ===============")
+        export+=("No public RDS DBs")
+    export+=("\n======================================================")
+    export+=("============= Public Redshift clusters ===============")
     i=1
     if clusters:
         for cluster in clusters:
-            print(str(i)+": Cluster id: "+cluster[0]+" -> region: "+cluster[1][0]+" -> DB Name: "+cluster[1][1]+" -> Endpoint: "+cluster[1][2]+" -> Public SG: "+cluster[1][3])
+            export+=(str(i)+": Cluster id: "+cluster[0]+" -> region: "+cluster[1][0]+" -> DB Name: "+cluster[1][1]+" -> Endpoint: "+cluster[1][2]+" -> Public SG: "+cluster[1][3])
             i+=1
     else:
-        print("No public Redshift clusters")
+        export+=("No public Redshift clusters")
 
-    return 1
+    return export
 
 def printForRobots(buckets,apis,ec2s,elbs,dbs,clusters):
     export={
@@ -125,8 +125,7 @@ def printForRobots(buckets,apis,ec2s,elbs,dbs,clusters):
                 "Security group":cluster[1][3]
             })
 
-    print(export)
-    return 1
+    return export
 
 def main():
 
@@ -159,7 +158,6 @@ def main():
     # create profile session
     session=boto3.Session(profile_name=args.profile)
     log.info(f'[main] Session created for profile {args.profile}')
-
 
     print("""
     o ||    o ||
