@@ -22,7 +22,7 @@ Services covered by this tool:
 ## Usage
 - Clone this repository
 - Configure your envionment with active credentials -> aws configure [sso]
-- Run poro.py [-h] [--profile PROFILE] [--verbose]
+- Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--format {human,json}] [--verbose]
 
       optional arguments:
         -h, --help            show this help message and exit
