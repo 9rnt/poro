@@ -182,16 +182,16 @@ def main():
 
     if not args.file_name:
         if args.format == "human":
-            printForHuman(buckets,apis,ec2s,elbs,dbs,clusters)
+            print(printForHuman(buckets,apis,ec2s,elbs,dbs,clusters))
         if args.format == "json":
-            printForRobots(buckets,apis,ec2s,elbs,dbs,clusters)
+            print(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters))
     else:
         f = open(args.file_name, "w")
         if args.format == "human":
             f.write(printForHuman(buckets,apis,ec2s,elbs,dbs,clusters))
             f.close()
         if args.format == "json":
-            f.write(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters))
+            f.write(str(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters)))
             f.close()
         
     return 1
