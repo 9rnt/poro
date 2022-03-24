@@ -17,7 +17,7 @@ def listAPI(log,session):
     for region in available_regions:    
         try: 
             # Get classic API gateway list
-            client = session.client('apigateway')
+            client = session.client('apigateway',region_name=region)
             APIs=client.get_rest_apis().get("items")
             for api in APIs:
                 if not('PRIVATE' in api.get("endpointConfiguration").get("types")):
@@ -37,7 +37,7 @@ def listAPI(log,session):
     for region in available_regions:    
         try:
             # Get API v2 list
-            client = session.client('apigatewayv2')
+            client = session.client('apigatewayv2',region_name=region)
             APIs=client.get_apis().get("Items")
             for api in APIs:
                 public_API.append([api.get("ApiId"),region,[api.get('ApiEndpoint')]])
