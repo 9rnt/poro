@@ -23,7 +23,7 @@ def listPublicCluster(log,session):
                 # check if the cluster is publicly accessible
                 if cluster['PubliclyAccessible']:
                     # check if the VPC sg or the Cluster SG allows public connections
-                    resource=session.resource('ec2')
+                    resource=session.resource('ec2',region_name=region)
                     for securitygroup in cluster['ClusterSecurityGroups']:
                         SG=resource.SecurityGroup(securitygroup['DBSecurityGroupId'])
                         sgIsPublic=False

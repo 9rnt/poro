@@ -10,7 +10,7 @@ def getELB(log,session):
     publicLoadbalancers=[]
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('elbv2')
-
+    log.debug(f'[getELB] available regions: {available_regions}')
     for region in available_regions:    
         try: 
             # get the list of ELB

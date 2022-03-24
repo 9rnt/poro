@@ -24,7 +24,7 @@ def listPublicDB(log,session):
                 # check if RDS DB is publicly accessible
                 if (lRDS['PubliclyAccessible']):
                     # check if the RDS DB is reachable from the internet through VPC SG or DB SG (some false positive may appear)
-                    resource=session.resource('ec2')
+                    resource=session.resource('ec2', region_name=region)
                     for securitygroup in lRDS['DBSecurityGroups']:
                         SG=resource.SecurityGroup(securitygroup['DBSecurityGroupId'])
                         sgIsPublic=False
