@@ -14,7 +14,7 @@ def getELB(log,session):
     for region in available_regions:    
         try: 
             # get the list of ELB
-            client = session.client('elbv2')
+            client = session.client('elbv2',region_name=region)
             response = client.describe_load_balancers()
             loadBalancers=response['LoadBalancers']
             

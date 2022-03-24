@@ -13,6 +13,7 @@ def listAPI(log,session):
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('apigateway')
+    log.debug(f'[listAPI] available regions: {available_regions}')
 
     for region in available_regions:    
         try: 
