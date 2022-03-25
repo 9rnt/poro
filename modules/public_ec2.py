@@ -1,5 +1,6 @@
 import boto3
 import botocore
+import enlighten
 
 # returns a list of publicly accessible EC2
 # returns [[instanceID:[instance public IP, public security group]]]
@@ -12,6 +13,10 @@ def listPublicEC2(log,session):
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('ec2')
+    bar_format = '{desc}{desc_pad}{percentage:3.0f}%|{bar}| ' 
+    manager = enlighten.get_manager()
+    pbar = manager.counter(total=len(available_regions), desc=f'Scanning EC2: ', bar_format=bar_format) 
+
 
     for region in available_regions:    
         # Get EC2 instances list
@@ -32,7 +37,8 @@ def listPublicEC2(log,session):
                         if sgIsPublic:
                             publicEC2.append([instance.id,[region,instance.public_ip_address,sgIsPublic]])
         except botocore.exceptions.ClientError as e :
-            log.error("[listPublicEC2] Unexpected error when scanning ec2 in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.info("[listPublicEC2] Unexpected error when scanning ec2 in the region %s: %s" %(region, e.response['Error']['Message']))
+        pbar.update(1)
 
     log.info("[listPublicEC2] End")
     return publicEC2

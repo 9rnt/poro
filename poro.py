@@ -1,3 +1,4 @@
+from glob import glob
 from modules.public_buckets import listPublicBuckets
 from modules.public_api import listAPI
 from modules.public_ec2 import listPublicEC2
@@ -7,69 +8,19 @@ from modules.public_redshift import listPublicCluster
 import logging
 import argparse
 import boto3
+import sys
+import datetime
 
-def printForHuman(buckets,apis,ec2s,elbs,dbs,clusters):
-    export=f"""\nHunting results:
-    ======================================================
-    ================= Public Buckets ====================="""
-    i=1
-    if buckets:
-        for bucket in buckets:
-            export+=(str(i)+": Bucket name: "+bucket[0]+" -> "+bucket[1])
-            i+=1
-    else:
-        export+=("No public buckets")
-    export+=("\n======================================================")
-    export+=("================== Exposed APIs ======================")
-    i=1
-    if apis:
-        for api in apis:
-            export+=(str(i)+": API id: "+api[0]+" -> region: "+api[1]+" -> endpoints: ")
-            for endpoint in api[2]:
-                export+=("------------- "+endpoint)
-            i+=1
-    else:
-        export+=("No public APIs")
-    export+=("\n======================================================")
-    export+=("================ Internet facing EC2 =================")
-    i=1
-    if ec2s:
-        for ec2 in ec2s:
-            export+=(str(i)+": Instance id: "+ec2[0]+" -> region: "+ec2[1][0]+" -> public IP: "+ec2[1][1]+" -> security group: "+ec2[1][2])
-            i+=1
-    else:
-        export+=("No internet facing EC2s")
-    export+=("\n======================================================")
-    export+=("==================== Exposed ELB =====================")
-    i=1
-    if elbs:
-        for elb in elbs:
-            export+=(str(i)+": ELB ARN: "+elb[0]+" -> DNS: "+elb[1][0]+" -> attached security groups:")
-            for sg in elb[1][1]:
-                export+=("\n\t"+sg)
-            i+=1
-    else:
-        export+=("No exposed ELBs")
-    export+=("\n======================================================")
-    export+=("=================== Public RDS DB ====================")
-    i=1
-    if dbs:
-        for db in dbs:
-            export+=(str(i)+": RDS id: "+db[0]+" -> region: "+db[1][0]+" -> public IP: "+"to specify"+" -> security group: "+db[1][1])
-            i+=1
-    else:
-        export+=("No public RDS DBs")
-    export+=("\n======================================================")
-    export+=("============= Public Redshift clusters ===============")
-    i=1
-    if clusters:
-        for cluster in clusters:
-            export+=(str(i)+": Cluster id: "+cluster[0]+" -> region: "+cluster[1][0]+" -> DB Name: "+cluster[1][1]+" -> Endpoint: "+cluster[1][2]+" -> Public SG: "+cluster[1][3])
-            i+=1
-    else:
-        export+=("No public Redshift clusters")
+def animate(message):
+    global done
+    for c in itertools.cycle(['|', '/', '-', '\\']):
+        if done:
+            break
+        sys.stdout.write('\r' + message + c)
+        sys.stdout.flush()
+        time.sleep(0.1)
+    sys.stdout.write('\rDone!     ')
 
-    return export
 
 def printForRobots(buckets,apis,ec2s,elbs,dbs,clusters):
     export={
@@ -128,7 +79,7 @@ def printForRobots(buckets,apis,ec2s,elbs,dbs,clusters):
     return export
 
 def main():
-
+    global done
     logging.basicConfig(format="%(levelname)s: %(message)s")
     log = logging.getLogger()
     
@@ -136,8 +87,6 @@ def main():
     # parse arguments
     parser.add_argument('--profile', dest='profile',default='default', help='Specify the aws profile (default is default)')
     parser.add_argument('--export', dest='file_name', help='Specify the file name if you want to expport the results')
-    parser.add_argument('--format', dest='format',default='human', choices=['human', 'json'], help='Specify the formatting option (default is human)')
-
     parser.add_argument('--verbose', '-v', dest='verbose', action='count', default=0)
 
     args = parser.parse_args()
@@ -166,34 +115,32 @@ def main():
     _||  _)  \\\  _) 
 
     """)
-
-    print("\n°° Searching for public buckets °°")
+    print(str(datetime.datetime.now().strftime("%X"))+' --- S3 buckets scan is starting')
     buckets=listPublicBuckets(log,session)
-    print("\n°° Searching for exposed APIs °°")
+
+    print(str(datetime.datetime.now().strftime("%X"))+' --- API Gateways scan is starting')
     apis=listAPI(log,session)
-    print("\n°° Searching for internet facing EC2 °°")
+
+    print(str(datetime.datetime.now().strftime("%X"))+' --- EC2 instances scan is starting')
     ec2s=listPublicEC2(log,session)
-    print("\n°° Searching for exposed ELBs °°")
+
+    print(str(datetime.datetime.now().strftime("%X"))+' --- ELB scan is starting')
     elbs=getELB(log,session)
-    print("\n°° Searching for public RDS DB °°")
+
+    print(str(datetime.datetime.now().strftime("%X"))+' --- RDS scan is starting')
     dbs=listPublicDB(log,session)
-    print("\n°° Searching for exposed redshift clusters °°")
+
+    print(str(datetime.datetime.now().strftime("%X"))+' --- Redshift clusters scan is starting')
     clusters=listPublicCluster(log,session)
 
-    if not args.file_name:
-        if args.format == "human":
-            print(printForHuman(buckets,apis,ec2s,elbs,dbs,clusters))
-        if args.format == "json":
-            print(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters))
+
+    if not args.file_name:        
+        print(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters))
+
     else:
         f = open(args.file_name, "w")
-        if args.format == "human":
-            f.write(printForHuman(buckets,apis,ec2s,elbs,dbs,clusters))
-            f.close()
-        if args.format == "json":
-            f.write(str(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters)))
-            f.close()
-        
+        f.write(str(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters)))
+        f.close()
     return 1
 
 

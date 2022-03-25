@@ -1,5 +1,6 @@
 import boto3
 import botocore
+import enlighten
 
 # returns a list of publicly Redshift databases
 # return [ClusterIdentifier,[region,DBName,Endpoint,Public Security Group]]
@@ -13,7 +14,10 @@ def listPublicCluster(log,session):
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('redshift')
-
+    bar_format = '{desc}{desc_pad}{percentage:3.0f}%|{bar}| ' 
+    manager = enlighten.get_manager()
+    pbar = manager.counter(total=len(available_regions), desc=f'Scanning Redshift: ', bar_format=bar_format) 
+    
     for region in available_regions:
         try:
             # get redshift clusters in every region
@@ -44,7 +48,8 @@ def listPublicCluster(log,session):
                             publicClusters.append([cluster['ClusterIdentifier'],[region,cluster['DBName'],cluster['Endpoint'],sgIsPublic]])
 
         except botocore.exceptions.ClientError as e:
-            log.error("[listPublicCluster] Unexpected error when scanning Redshift in the region %s: %s" %(region, e.response['Error']['Message']))
+            log.info("[listPublicCluster] Unexpected error when scanning Redshift in the region %s: %s" %(region, e.response['Error']['Message']))
+        pbar.update(1)
 
     log.info("[listPublicCluster] End")
     return publicClusters

@@ -15,73 +15,20 @@ Services covered by this tool:
 ## Prequisites
 - AWS account with Read Only Access to services listed above.
 - Python 3.X
-- Boto3 > 1.2X
-- Botocore > 1.2X
-- Requests > 2.2X
+- requests>=2.22.0
+- boto3>=1.20
+- botocore>= 1.20
+- tqdm>=4.62
 
 ## Usage
 - Clone this repository
 - Configure your envionment with active credentials -> aws configure [sso]
-- Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--format {human,json}] [--verbose]
+- Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--verbose]
 
       optional arguments:
         -h, --help            show this help message and exit
         --profile PROFILE     Specify the aws profile (default is default)
         --export FILE_NAME    Specify the file name if you want to expport the results
-        --format {human,json}
-                              Specify the formatting option (default is human)
         --verbose, -v
 
-Poro will print all exception raised when querying AWS APIs, the scanning result will be printed at the end of the output.
-Example of Poro output:
-```
-o ||    o ||
-  _||    __||     
- ||     \\       Let the hunt begin.
-_||  _)  \\  _) 
-
-
-°° Searching for public buckets °°
-Unexpected error whith bucket XXX: NoSuchBucketPolicy
-
-°° Searching for exposed APIs °°
-
-°° Searching for internet facing EC2 °°
-Unexpected error when scanning ec2 in the region af-south-1: AWS was not able to validate the provided access credentials
-Unexpected error when scanning ec2 in the region ap-east-1: AWS was not able to validate the provided access credentials
-
-°° Searching for exposed ELBs °°
-
-°° Searching for public RDS DB °°
-Unexpected error when scanning RDS in the region af-south-1: The security token included in the request is invalid.
-
-°° Searching for exposed redshift clusters °°
-Unexpected error when scanning Redshift in the region af-south-1: The security token included in the request is invalid.
-Unexpected error when scanning Redshift in the region ap-east-1: The security token included in the request is invalid.
-
-Hunting results:
-======================================================
-================= Public Buckets =====================
-1: Bucket name: XXX -> Public Policy
-
-======================================================
-================== Exposed APIs ======================
-No public APIs
-
-======================================================
-================ Internet facing EC2 =================
-No internet facing EC2s
-
-======================================================
-==================== Exposed ELB =====================
-1: ELB ARN: arn:aws:elasticloadbalancing:us-west-2:XXX:XXX/XXX/XXX/XXX -> DNS: XXX.us-west-2.elb.amazonaws.com -> attached security groups:
-------------- sg-XXX
-
-======================================================
-=================== Public RDS DB ====================
-No public RDS DBs
-
-======================================================
-============= Public Redshift clusters ===============
-No public Redshift clusters
-```
+Poro prints the scanning results at the end of it's execution in a json file if no export option is not specified.
