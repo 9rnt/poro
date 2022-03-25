@@ -10,19 +10,14 @@ import argparse
 import boto3
 import sys
 import datetime
-
-def animate(message):
-    global done
-    for c in itertools.cycle(['|', '/', '-', '\\']):
-        if done:
-            break
-        sys.stdout.write('\r' + message + c)
-        sys.stdout.flush()
-        time.sleep(0.1)
-    sys.stdout.write('\rDone!     ')
+import botocore
 
 
-def printForRobots(buckets,apis,ec2s,elbs,dbs,clusters):
+def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
+    log.info(f'[printForRobots] Start')
+    key=kwarg.get('key',None)
+    value=kwarg.get('value',None)
+    log.info(f'[printForRobots] tag is {key}:{value}')
     export={
         "Public buckets":[],
         "Public API":[],
@@ -31,50 +26,187 @@ def printForRobots(buckets,apis,ec2s,elbs,dbs,clusters):
         "Public RDS":[],
         "Public Redshift clusters":[]
     }
+    try:
+        account_id=session.client('sts').get_caller_identity().get('Account')
+    except botocore.exceptions.ClientError as e :
+        log.info(f'[printForRobots] unexpected error when getting accoun id {e.response.get("Error")}')
+                
     if buckets:
         for bucket in buckets:
-            export["Public buckets"].append({
-                "Name":bucket[0],
-                "Rational":bucket[1]
-            })
+            if key:
+                client = session.client('s3')
+                bucket_tag=False
+                try:
+                    response = client.get_bucket_tagging(Bucket=bucket[0])
+                    for tag in response['TagSet']:
+                        if tag['Key']==key:
+                            if tag['Value']==value:
+                                bucket_tag=True
+                except botocore.exceptions.ClientError as e :
+                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                export["Public buckets"].append({
+                    "Name":bucket[0],
+                    "is Tagged":bucket_tag,
+                    "Rational":bucket[1]
+                })
+            else:
+                export["Public buckets"].append({
+                    "Name":bucket[0],
+                    "Rational":bucket[1]
+                })
     if apis:
         for api in apis:
-            export["Public API"].append({
-                "ID":api[0],
-                "Region":api[1],
-                "Endpoints":api[2]
-            })
+            if key:
+                client=session.client('resourcegroupstaggingapi',region_name=api[1])
+                api_tag=False
+                try:
+                    api_arn='arn:aws:apigateway:us-west-2::/apis/'+api[0]
+                    response=client.get_resources(ResourceARNList=[api_arn])
+                    log.info(f"[printForRobots] tag response for {api_arn} is {response}")
+                    if response['ResourceTagMappingList']:
+                        for tag in response['ResourceTagMappingList'][0]['Tags']:
+                            if tag['Key']==key:
+                                if tag['Value']==value:
+                                    api_tag=True
+                except botocore.exceptions.ClientError as e :
+                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                export["Public API"].append({
+                    "ID":api[0],
+                    "Region":api[1],
+                    "is Tagged":api_tag,
+                    "Endpoints":api[2]
+                })
+            else:
+                export["Public API"].append({
+                    "ID":api[0],
+                    "Region":api[1],
+                    "Endpoints":api[2]
+                })
     if ec2s:
         for ec2 in ec2s:
-            export["Public EC2"].append({
-                "ID":ec2[0],
-                "Region":ec2[1][0],
-                "Public IP":ec2[1][1],
-                "Security group":ec2[1][2]
-            })
+            if key:
+                ec2_tag=False
+                client=session.client('ec2',region_name=ec2[1][0])
+                try:
+                    response=client.describe_tags(Filters=[
+                        {
+                            'Name': 'resource-id',
+                            'Values': [
+                                ec2[0],
+                            ]
+                        },
+                    ])
+                    log.info(f"[printForRobots] tags for {ec2[0]} are {response['Tags']}")
+                    for tag in response['Tags']:
+                            if tag['Key']==key:
+                                if tag['Value']==value:
+                                    ec2_tag=True
+                except botocore.exceptions.ClientError as e :
+                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                export["Public EC2"].append({
+                    "ID":ec2[0],
+                    "Region":ec2[1][0],
+                    "Public IP":ec2[1][1],
+                    "is Tagged":ec2_tag,
+                    "Security group":ec2[1][2]
+                })
+            else:
+                export["Public EC2"].append({
+                    "ID":ec2[0],
+                    "Region":ec2[1][0],
+                    "Public IP":ec2[1][1],
+                    "Security group":ec2[1][2]
+                })
     if elbs:
         for elb in elbs:
-            export["Public ELB"].append({
-                "ARN":elb[0],
-                "DNS":elb[1][0],
-                "Security groups":elb[1][1]
-            })
+            if key:
+                client=session.client('elbv2',region_name=elb[1][2])
+                elb_tag=False
+                try:
+                    response=client.describe_tags(ResourceArns=[elb[0]])
+                    log.info(f"[printForRobots] tag response for {elb[0]} is {response}")
+                    if response['TagDescriptions']:
+                        for tag in response['TagDescriptions'][0]['Tags']:
+                            if tag['Key']==key:
+                                if tag['Value']==value:
+                                    elb_tag=True
+                except botocore.exceptions.ClientError as e :
+                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                export["Public ELB"].append({
+                    "ARN":elb[0],
+                    "DNS":elb[1][0],
+                    "Region":elb[1][2],
+                    "Security groups":elb[1][1],
+                    "is tagged":elb_tag
+                })
+            else:
+                export["Public ELB"].append({
+                    "ARN":elb[0],
+                    "DNS":elb[1][0],
+                    "Region":elb[1][2],
+                    "Security groups":elb[1][1]
+                })
     if dbs:
         for db in dbs:
-            export["Public RDS"].append({
+            if key:
+                client=session.client('rds',region_name=db[1][0])
+                rds_tag=False
+                try:
+                    db_arn=f'arn:aws:rds:{db[1][0]}:{account_id}:db:{db[0]}'
+                    response=client.list_tags_for_resource(ResourceName=db_arn)
+                    log.info(f"[printForRobots] tag response for {db[0]} is {response}")
+                    if response['TagList']:
+                        for tag in response['TagList']:
+                            if tag['Key']==key:
+                                if tag['Value']==value:
+                                    rds_tag=True
+                except botocore.exceptions.ClientError as e :
+                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                export["Public RDS"].append({
+                "ID":db[0],
+                "Region":db[1][0],
+                "Security groups":elb[1][1],
+                "is tagged":rds_tag
+            })
+            else:
+                export["Public RDS"].append({
                 "ID":db[0],
                 "Region":db[1][0],
                 "Security groups":elb[1][1]
             })
+            
     if clusters:
         for cluster in clusters:
-            export["Public Redshift clusters"].append({
-                "ID":cluster[0],
-                "Region":cluster[1][0],
-                "DB Name":cluster[1][1],
-                "Endpoint":cluster[1][2],
-                "Security group":cluster[1][3]
-            })
+            if key:
+                rs_tag=False
+                client=session.client('redshift',region_name=ec2[1][0])
+                try:
+                    rs_arn=f'arn:aws:redshift:{cluster[1][0]}:{account_id}:cluster:{cluster[0]}'
+                    response=client.describe_tags(ResourceName=rs_arn)
+                    log.info(f"[printForRobots] tags for {cluster[0]} are {response['TaggedResources']}")
+                    if response['TaggedResources']:
+                        for tag in response['TaggedResources']['Tag']:
+                            if tag['Key']==key:
+                                if tag['Value']==value:
+                                    rs_tag=True
+                except botocore.exceptions.ClientError as e :
+                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                export["Public Redshift clusters"].append({
+                    "ID":cluster[0],
+                    "Region":cluster[1][0],
+                    "DB Name":cluster[1][1],
+                    "Endpoint":cluster[1][2],
+                    "Security group":cluster[1][3],
+                    "is tagged":rs_tag
+                })
+            else:                
+                export["Public Redshift clusters"].append({
+                    "ID":cluster[0],
+                    "Region":cluster[1][0],
+                    "DB Name":cluster[1][1],
+                    "Endpoint":cluster[1][2],
+                    "Security group":cluster[1][3]
+                })
 
     return export
 
@@ -88,7 +220,8 @@ def main():
     parser.add_argument('--profile', dest='profile',default='default', help='Specify the aws profile (default is default)')
     parser.add_argument('--export', dest='file_name', help='Specify the file name if you want to expport the results')
     parser.add_argument('--verbose', '-v', dest='verbose', action='count', default=0)
-
+    parser.add_argument('--tag-key', dest='key', help='Specify the tag key that you want to check if it exists in public resources')
+    parser.add_argument('--tag-value', dest='value', help='Specify the tag value that you want to check if it exists in public resources')
     args = parser.parse_args()
 
     # set verbose level
@@ -106,6 +239,8 @@ def main():
 
     # create profile session
     session=boto3.Session(profile_name=args.profile)
+    key=args.key
+    value=args.value
     log.info(f'[main] Session created for profile {args.profile}')
 
     print("""
@@ -134,15 +269,15 @@ def main():
     clusters=listPublicCluster(log,session)
 
 
-    if not args.file_name:        
-        print(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters))
+    print(str(datetime.datetime.now().strftime("%X"))+' --- Formatting the scan results')        
+    if not args.file_name:
+        print(printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,key=key,value=value))
 
     else:
         f = open(args.file_name, "w")
-        f.write(str(printForRobots(buckets,apis,ec2s,elbs,dbs,clusters)))
+        f.write(str(printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,key=key,value=value)))
         f.close()
     return 1
-
 
 if __name__ == "__main__":
     main()

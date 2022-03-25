@@ -12,6 +12,8 @@ Services covered by this tool:
 - EC2 instances
 - Redshift Databases
 
+Poro also check if a tag you specify is applied to identified public resources using --tag-key and --tag-value arguments.
+
 ## Prequisites
 - AWS account with Read Only Access to services listed above.
 - Python 3.X
@@ -23,12 +25,14 @@ Services covered by this tool:
 ## Usage
 - Clone this repository
 - Configure your envionment with active credentials -> aws configure [sso]
-- Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--verbose]
+- Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--verbose] [--tag-key KEY] [--tag-value VALUE]
 
       optional arguments:
-        -h, --help            show this help message and exit
-        --profile PROFILE     Specify the aws profile (default is default)
-        --export FILE_NAME    Specify the file name if you want to expport the results
-        --verbose, -v
+      -h, --help          show this help message and exit
+      --profile PROFILE   Specify the aws profile (default is default)
+      --export FILE_NAME  Specify the file name if you want to expport the results
+      --verbose, -v
+      --tag-key KEY       Specify the tag key that you want to check if it exists in public resources
+      --tag-value VALUE   Specify the tag value that you want to check if it exists in public resources
 
 Poro prints the scanning results at the end of it's execution in a json file if no export option is not specified.

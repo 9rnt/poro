@@ -3,7 +3,7 @@ import botocore
 import enlighten
 
 # returns a list of publicly accessible EC2
-# returns [[loadbalancer ARN,[loadbalancer dns, [attached security groups]]]]
+# returns [[loadbalancer ARN,[loadbalancer dns, [attached security groups],region]]]
 
 def getELB(log,session):
     log.info('[getELB] Start')
@@ -28,7 +28,7 @@ def getELB(log,session):
             for elb in loadBalancers:
                 if elb['Scheme']=='internet-facing':
                     log.debug(f"[getELB] ELB data: {elb}")
-                    publicLoadbalancers.append([elb['LoadBalancerArn'],[elb['DNSName'],elb['SecurityGroups']]])
+                    publicLoadbalancers.append([elb['LoadBalancerArn'],[elb['DNSName'],elb['SecurityGroups'],region]])
         except botocore.exceptions.ClientError as e :
             log.info("[getELB] Unexpected error when scanning elbv2 in the region %s: %s" %(region, e.response['Error']['Message']))
         pbar.update(1)
