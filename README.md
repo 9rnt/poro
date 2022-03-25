@@ -18,7 +18,7 @@ Services covered by this tool:
 - requests>=2.22.0
 - boto3>=1.20
 - botocore>= 1.20
-- tqdm>=4.62
+- enlighten>=1
 
 ## Usage
 - Clone this repository
