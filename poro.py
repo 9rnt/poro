@@ -1,4 +1,6 @@
 from glob import glob
+
+from more_itertools import bucket
 from modules.public_buckets import listPublicBuckets
 from modules.public_api import listAPI
 from modules.public_ec2 import listPublicEC2
@@ -72,6 +74,7 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                     log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public API"].append({
                     "ID":api[0],
+                    "Name":api[3],
                     "Region":api[1],
                     "is Tagged":api_tag,
                     "Endpoints":api[2]
@@ -120,7 +123,7 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
     if elbs:
         for elb in elbs:
             if key:
-                client=session.client('elbv2',region_name=elb[1][2])
+                client=session.client('elbv2',region_name=elb[1][3])
                 elb_tag=False
                 try:
                     response=client.describe_tags(ResourceArns=[elb[0]])
@@ -135,8 +138,9 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                 export["Public ELB"].append({
                     "ARN":elb[0],
                     "DNS":elb[1][0],
-                    "Region":elb[1][2],
+                    "Region":elb[1][3],
                     "Security groups":elb[1][1],
+                    "Target Groups":elb[1][2],
                     "is tagged":elb_tag
                 })
             else:
@@ -267,7 +271,6 @@ def main():
 
     print(str(datetime.datetime.now().strftime("%X"))+' --- Redshift clusters scan is starting')
     clusters=listPublicCluster(log,session)
-
 
     print(str(datetime.datetime.now().strftime("%X"))+' --- Formatting the scan results')        
     if not args.file_name:
