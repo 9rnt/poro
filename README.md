@@ -21,6 +21,7 @@ Poro also check if a tag you specify is applied to identified public resources u
 - boto3>=1.20
 - botocore>= 1.20
 - enlighten>=1
+- more-itertools >= 8.13
 
 ## Usage
 - Clone this repository
