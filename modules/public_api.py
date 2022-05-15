@@ -1,5 +1,3 @@
-from importlib import resources
-import resource
 import boto3
 import botocore
 from modules.test_endpoint import isEndPointUp
@@ -27,8 +25,6 @@ def listAPI(log,session):
             # Get classic API gateway list
             client = session.client('apigateway',region_name=region)
             APIs=client.get_rest_apis().get("items")
-            domains=client.get_domain_names(limit=500).get("items")
-
             for api in APIs:
                 if not('PRIVATE' in api.get("endpointConfiguration").get("types")):
                     stages=client.get_stages(restApiId=api.get("id")).get("item")
@@ -63,8 +59,7 @@ def listAPI(log,session):
             # Get API v2 list
             client = session.client('apigatewayv2',region_name=region)
             APIs=client.get_apis().get("Items")
-            domains=client.get_domain_names(MaxResults=500).get("Items")
-
+            log.info(f"[listAPI] List APIs is: {APIs}")
             for api in APIs:
                 endpoints=[]
                 endpoint=api.get('ApiEndpoint')

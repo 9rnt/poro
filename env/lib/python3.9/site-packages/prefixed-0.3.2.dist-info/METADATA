@@ -1,0 +1,241 @@
+Metadata-Version: 2.1
+Name: prefixed
+Version: 0.3.2
+Summary: Prefixed alternative numeric library
+Home-page: https://github.com/Rockhopper-Technologies/prefixed
+Author: Avram Lubkin
+Author-email: avylove@rockhopper.net
+Maintainer: Avram Lubkin
+Maintainer-email: avylove@rockhopper.net
+License: MPLv2.0
+Project-URL: Documentation, https://prefixed.readthedocs.io
+Keywords: si iec prefix nist
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Terminals
+
+.. start-badges
+
+| |docs| |travis| |codecov|
+| |pypi| |supported-versions| |supported-implementations|
+
+.. |docs| image:: https://img.shields.io/readthedocs/prefixed.svg?style=plastic&logo=read-the-docs
+    :target: https://prefixed.readthedocs.org
+    :alt: Documentation Status
+
+.. |travis| image:: https://img.shields.io/travis/Rockhopper-Technologies/prefixed.svg?style=plastic&logo=travis
+    :target: https://travis-ci.org/Rockhopper-Technologies/prefixed
+    :alt: Travis-CI Build Status
+
+.. |codecov| image:: https://img.shields.io/codecov/c/github/Rockhopper-Technologies/prefixed.svg?style=plastic&logo=codecov
+    :target: https://codecov.io/gh/Rockhopper-Technologies/prefixed
+    :alt: Coverage Status
+
+.. |pypi| image:: https://img.shields.io/pypi/v/prefixed.svg?style=plastic&logo=pypi
+    :alt: PyPI Package latest release
+    :target: https://pypi.python.org/pypi/prefixed
+
+.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/prefixed.svg?style=plastic&logo=pypi
+    :alt: Supported versions
+    :target: https://pypi.python.org/pypi/prefixed
+
+.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/prefixed.svg?style=plastic&logo=pypi
+    :alt: Supported implementations
+    :target: https://pypi.python.org/pypi/prefixed
+
+.. end-badges
+
+
+Overview
+========
+
+Prefixed provides an alternative implementation of the built-in float_ which supports
+formatted output with `SI (decimal)`_ and `IEC (binary)`_ prefixes.
+
+.. code-block:: python
+
+  >>> from prefixed import Float
+
+  >>> f'{Float(3250):.2h}'
+  '3.25k'
+
+  >>> '{:.2h}s'.format(Float(.00001534))
+  '15.34μs'
+
+  >>> '{:.2j}B'.format(Float(42467328))
+  '40.50MiB'
+
+  >>> f'{Float(2048):.2J}B'
+  '2.00KB'
+
+Because `prefixed.Float`_ inherits from the built-in float_, it behaves
+exactly the same in most cases.
+
+Key differences:
+
+- When a math operation is performed with another real number type
+  (float_, int_), the result will be a `prefixed.Float`_ instance.
+
+- Additional presentation types ``'h'``, ``'j'``, and ``'J'`` are supported for
+  f-strings and `format()`_.
+
+  +---------+----------------------------------------------------------+
+  | Type    | Meaning                                                  |
+  +=========+==========================================================+
+  | ``'h'`` | SI format. Outputs the number with closest divisible     |
+  |         | SI prefix. (k, M, G, ...)                                |
+  +---------+----------------------------------------------------------+
+  | ``'j'`` | IEC Format. Outputs the number with closest divisible    |
+  |         | IEC prefix. (Ki, Mi, Gi, ...)                            |
+  +---------+----------------------------------------------------------+
+  | ``'J'`` | Short IEC Format. Same as ``'j'`` but only a single      |
+  |         | character.   (K, M, G, ...)                              |
+  +---------+----------------------------------------------------------+
+
+- When initializing from strings, SI and IEC prefixes are honored
+
+.. code-block:: python
+
+    >>> Float('2k')
+    Float(2000.0)
+
+    >>> Float('2Ki')
+    Float(2048.0)
+
+- An additional format flag '!' is available which adds a space before the prefix
+
+.. code-block:: python
+
+  >>> f'{Float(3250):!.2h}'
+  '3.25 k'
+
+- An additional field, margin, can be specified which lowers or raises the threshold for
+  for each prefix by the given percentage.
+  Margin is specified before precision with the syntax  ``%[-]digit+``.
+
+.. code-block:: python
+
+    >>> f'{Float(950):.2h}'
+    '950.00'
+
+    >>> f'{Float(950):%-5.2h}'
+    '0.95k'
+
+    >>> f'{Float(1000):%5.2h}'
+    '1000.00'
+
+    >>> f'{Float(1050):%5.2h}'
+    '1.05k'
+
+
+Supported Prefixes
+==================
+
+SI (Decimal) Prefixes
+^^^^^^^^^^^^^^^^^^^^^
+
++--------+-------+----------+
+| Prefix | Name  |   Base   |
++========+=======+==========+
+|   Y    | Yotta | |10^24|  |
++--------+-------+----------+
+|   Z    | Zetta | |10^21|  |
++--------+-------+----------+
+|   E    | Exa   | |10^18|  |
++--------+-------+----------+
+|   P    | Peta  | |10^15|  |
++--------+-------+----------+
+|   T    | Tera  | |10^12|  |
++--------+-------+----------+
+|   G    | Giga  | |10^9|   |
++--------+-------+----------+
+|   M    | Mega  | |10^6|   |
++--------+-------+----------+
+|   k    | Kilo  | |10^3|   |
++--------+-------+----------+
+|   m    | Milli | |10^-3|  |
++--------+-------+----------+
+|   μ    | Micro | |10^-6|  |
++--------+-------+----------+
+|   n    | Nano  | |10^-9|  |
++--------+-------+----------+
+|   p    | Pico  | |10^-12| |
++--------+-------+----------+
+|   f    | Femto | |10^-15| |
++--------+-------+----------+
+|   a    | Atto  | |10^-18| |
++--------+-------+----------+
+|   z    | Zepto | |10^-21| |
++--------+-------+----------+
+|   y    | Yocto | |10^-24| |
++--------+-------+----------+
+
+IEC (Binary) Prefixes
+^^^^^^^^^^^^^^^^^^^^^
+
++--------+------+--------+
+| Prefix | Name |  Base  |
++========+======+========+
+|   Y    | Yobi | |2^80| |
++--------+------+--------+
+|   Z    | Zebi | |2^70| |
++--------+------+--------+
+|   E    | Exbi | |2^60| |
++--------+------+--------+
+|   P    | Pedi | |2^50| |
++--------+------+--------+
+|   T    | Tebi | |2^40| |
++--------+------+--------+
+|   G    | Gibi | |2^30| |
++--------+------+--------+
+|   M    | Mebi | |2^20| |
++--------+------+--------+
+|   K    | Kibi | |2^10| |
++--------+------+--------+
+
+.. _SI (decimal): https://en.wikipedia.org/wiki/Metric_prefix
+.. _IEC (binary): https://en.wikipedia.org/wiki/Binary_prefix
+.. _float: https://docs.python.org/3/library/functions.html#float
+.. _int: https://docs.python.org/3/library/functions.html#int
+.. _prefixed.Float: https://prefixed.readthedocs.io/en/stable/api.html#prefixed.Float
+.. _format(): https://docs.python.org/3/library/functions.html#format
+
+.. |10^24| replace:: 10\ :sup:`24`\
+.. |10^21| replace:: 10\ :sup:`21`\
+.. |10^18| replace:: 10\ :sup:`18`\
+.. |10^15| replace:: 10\ :sup:`15`\
+.. |10^12| replace:: 10\ :sup:`12`\
+.. |10^9| replace:: 10\ :sup:`9`\
+.. |10^6| replace:: 10\ :sup:`6`\
+.. |10^3| replace:: 10\ :sup:`3`\
+.. |10^-3| replace:: 10\ :sup:`-3`\
+.. |10^-6| replace:: 10\ :sup:`-6`\
+.. |10^-9| replace:: 10\ :sup:`-9`\
+.. |10^-12| replace:: 10\ :sup:`-12`\
+.. |10^-15| replace:: 10\ :sup:`-15`\
+.. |10^-18| replace:: 10\ :sup:`-18`\
+.. |10^-21| replace:: 10\ :sup:`-21`\
+.. |10^-24| replace:: 10\ :sup:`-24`\
+
+.. |2^80| replace:: 2\ :sup:`80`\
+.. |2^70| replace:: 2\ :sup:`70`\
+.. |2^60| replace:: 2\ :sup:`60`\
+.. |2^50| replace:: 2\ :sup:`50`\
+.. |2^40| replace:: 2\ :sup:`40`\
+.. |2^30| replace:: 2\ :sup:`30`\
+.. |2^20| replace:: 2\ :sup:`20`\
+.. |2^10| replace:: 2\ :sup:`10`\
+
+

@@ -1,6 +1,3 @@
-from glob import glob
-
-from more_itertools import bucket
 from modules.public_buckets import listPublicBuckets
 from modules.public_api import listAPI
 from modules.public_ec2 import listPublicEC2
@@ -10,7 +7,6 @@ from modules.public_redshift import listPublicCluster
 import logging
 import argparse
 import boto3
-import sys
 import datetime
 import botocore
 
