@@ -2,7 +2,7 @@
 ![Poro art](https://i.ibb.co/4K4vq3G/poro-small.png)
 
 ## Description
-Scan for publicly accessible assets on your AWS environment
+Scans for publicly accessible assets on your AWS environment and return information about the resources including tags
 
 Services covered by this tool:
 - AWS ELB
@@ -12,26 +12,21 @@ Services covered by this tool:
 - EC2 instances
 - Redshift Databases
 
-Poro also check if a tag you specify is applied to identified public resources using --tag-key and --tag-value arguments.
+## Env variables description
+log_level = os.environ['LOG_LEVEL'].upper()
+    role_name = os.environ['ROLE_NAME']
+    accounts_configuration = list(eval(os.environ['ACCOUNTS_CONFIGURATION']))
+    db_url = os.environ['DB_URL']
+    db_username = os.environ['DB_USERNAME']
+    db_password = os.environ['DB_PASSWORD']
+    db_name = os.environ['DB_NAME']
 
-## Prequisites
-- AWS account with Read Only Access to services listed above.
-- Python 3.X
-- requests>=2.22.0
-- boto3>=1.20
-- botocore>= 1.20
-
-## Usage
-- Clone this repository
-- Configure your envionment with active credentials -> aws configure [sso]
-- Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--verbose] [--tag-key KEY] [--tag-value VALUE]
-
-      optional arguments:
-      -h, --help          show this help message and exit
-      --profile PROFILE   Specify the aws profile (default is default)
-      --export FILE_NAME  Specify the file name if you want to expport the results
-      --verbose, -v
-      --tag-key KEY       Specify the tag key that you want to check if it exists in public resources
-      --tag-value VALUE   Specify the tag value that you want to check if it exists in public resources
-
-Poro prints the scanning results at the end of it's execution in a json file if no export option is not specified.
+| Variable | Description |
+|----------|-------------|
+| LOG_LEVEL | Log level required by the app |
+| ROLE_NAME | The role name for the app to assume. Must have read only permissions to the services covered by the tool |
+| ACCOUNTS_CONFIGURATION | A list of dicts (passed as string) of the accounts id and external ids used by to assume the role (consider passing it with a secret manager tool). When no external Id is configured in the assume role do not pass it. Example: [{'accountId':'18976838763','externalId':'lkjdalkj/9871lklazdlkKLJldn'},{'accountId':'198719871379'}] |
+| DB_URL | The Arangodb url. Example http://localhost:8529 |
+| DB_NAME | ArangoDB name |
+| DB_USERNAME | Arangodb user name |
+| DB_PASSWORD | Arangodb password (consider passing it with a secret manager tool) |
