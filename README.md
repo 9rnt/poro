@@ -20,7 +20,6 @@ Poro also check if a tag you specify is applied to identified public resources u
 - requests>=2.22.0
 - boto3>=1.20
 - botocore>= 1.20
-- enlighten>=1
 
 ## Usage
 - Clone this repository

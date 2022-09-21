@@ -34,6 +34,7 @@ def getELB(log,session):
                         targetGroups.append(tg.get('TargetGroupArn'))
                     publicLoadbalancers.append({
                         "service":"elbv2",
+                        "resourceType":"loadbalancer",
                         "arn":elb['LoadBalancerArn'],
                         "dnsName":elb['DNSName'],
                         "region":region,

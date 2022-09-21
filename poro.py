@@ -1,13 +1,12 @@
-from modules.public_buckets import listPublicBuckets
+from modules.public_buckets import *
 from modules.public_api import *
-from modules.public_ec2 import listPublicEC2
+from modules.public_ec2 import getEC2Tags, listPublicEC2
 from modules.elb import *
-from modules.public_db import listPublicDB
+from modules.public_db import getRdsInstanceTags, listPublicDB
 from modules.public_redshift import listPublicCluster
 import logging
 import argparse
 import boto3
-import datetime
 import botocore
 
 
@@ -256,7 +255,7 @@ def main():
     # print(str(datetime.datetime.now().strftime("%X"))+' --- API Gateways scan is starting')
     # apis=listAPI(log,session)
 
-    # print(str(datetime.datetime.now().strftime("%X"))+' --- EC2 instances scan is starting')
+    
     # ec2s=listPublicEC2(log,session)
 
     # print(str(datetime.datetime.now().strftime("%X"))+' --- ELB scan is starting')
@@ -266,22 +265,9 @@ def main():
     # dbs=listPublicDB(log,session)
 
     # print(str(datetime.datetime.now().strftime("%X"))+' --- Redshift clusters scan is starting')
-    # clusters=listPublicCluster(log,session)
+    clusters=listPublicCluster(log,session)
 
-    api={
-    'apiId': '8acsazdleg',
-    'region': 'us-west-2',
-    'endpoint': 'https://8acsazdleg.execute-api.us-west-2.amazonaws.com',
-    'routes': [{
-        'routeKey': 'POST /call_recording',
-        'integrationUri': 'arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:555773567328:function:production-call-service-call-recording:latest/invocations',
-        'integrationType': 'AWS_PROXY'
-    }],
-    'apiName': 'production-call-service-CallAssets-1O4NUDQ8GJVVD',
-    'service': 'apigatewayv2',
-    'arn': 'arn:aws:apigateway:us-west-2::/apis/8acsazdleg'
-}
-    print(getAPITags(log,session,api))
+    print(clusters)
 
     return 1
 

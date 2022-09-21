@@ -43,6 +43,7 @@ def listAPI(log,session):
                                     "endpoint":"https://"+api.get("id")+".execute-api."+region+".amazonaws.com/",
                                     "routes":routes,
                                     "service":"apigateway",
+                                    "resourceType":"restapi",
                                     "arn":f"arn:aws:apigateway:{region}::/restapis/{api.get('id')}"
                                 }
                             )
@@ -79,6 +80,7 @@ def listAPI(log,session):
                         "routes":routes,
                         "apiName":api.get("Name"),
                         "service":"apigatewayv2",
+                        "resourceType":"api",
                         "arn":f"arn:aws:apigateway:{region}::/apis/{api.get('ApiId')}"
                     }
                 )

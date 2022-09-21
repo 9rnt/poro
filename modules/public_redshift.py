@@ -1,9 +1,6 @@
 import boto3
 import botocore
 
-# returns a list of publicly Redshift databases
-# return [ClusterIdentifier,[region,DBName,Endpoint,Public Security Group]]
-
 def listPublicCluster(log,session):
     log.info("[listPublicCluster] Start")
     publicInbound=['0.0.0.0/0','0.0.0.0/8','0.0.0.0/16','0.0.0.0/24','0.0.0.0/32','::/0','::/16','::/32','::/48','::/64']
@@ -32,7 +29,15 @@ def listPublicCluster(log,session):
                                 if(authorizedIps['CidrIp'] in publicInbound):
                                     sgIsPublic=securitygroup['DBSecurityGroupId']
                         if sgIsPublic:
-                            publicClusters.append([cluster['ClusterIdentifier'],[region,cluster['DBName'],cluster['Endpoint'],sgIsPublic]])
+                            publicClusters.append({
+                                    "clusterId":cluster['ClusterIdentifier'],
+                                    "region":region,
+                                    "clusterEndpoint":cluster['Endpoint'],
+                                    "service":"redshift",
+                                    "resourceType":"cluster",
+                                    "clusterArn":cluster['clusterArn']
+                                })
+    
                     for securitygroup in cluster['VpcSecurityGroups']:
                         SG=resource.SecurityGroup(securitygroup['VpcSecurityGroupId'])
                         sgIsPublic=False
@@ -41,10 +46,29 @@ def listPublicCluster(log,session):
                                 if(authorizedIps['CidrIp'] in publicInbound):
                                     sgIsPublic=securitygroup['VpcSecurityGroupId']
                         if sgIsPublic:
-                            publicClusters.append([cluster['ClusterIdentifier'],[region,cluster['DBName'],cluster['Endpoint'],sgIsPublic]])
+                            publicClusters.append(
+                                {
+                                    "clusterId":cluster['ClusterIdentifier'],
+                                    "region":region,
+                                    "clusterEndpoint":cluster['Endpoint'],
+                                    "service":"redshift",
+                                    "resourceType":"cluster",
+                                    "arn":cluster['clusterArn']
+                                }
+                            )
 
         except botocore.exceptions.ClientError as e:
             log.info("[listPublicCluster] Unexpected error when scanning Redshift in the region %s: %s" %(region, e.response['Error']['Message']))
 
     log.info("[listPublicCluster] End")
     return publicClusters
+
+def getClusterTags(log,session,cluster):
+    log.info('[getCLusterTags] Start')
+    client=session.client('redshift',region_name=cluster["region"])
+    try:
+        response=client.describe_tags(ResourceName=cluster["arn"])
+        return response['TaggedResources']
+    except botocore.exceptions.ClientError as e :
+        log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
+        return None

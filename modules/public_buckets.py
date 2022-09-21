@@ -1,9 +1,5 @@
 import botocore
 
-# Returns a list of the names of public buckets and what makes them public in a form of a dict
-# returns [[bucket name, rational]]
-# The list may contain duplicates if a bucket contains both public ACLs and public policies
-
 def listPublicBuckets(log,session):
     # Initializate publicBuckets list
     log.info('[listPublicBucket] Start')
@@ -13,7 +9,7 @@ def listPublicBuckets(log,session):
     client = session.client('s3')
     response = client.list_buckets()
     buckets = response['Buckets']
-    log.info(f'[listPublicBucket] number of buckets: {len(buckets)}')
+    log.debug(f'[listPublicBucket] number of buckets: {len(buckets)}')
     for bucket in buckets :
         # Check if PublicAccessBlockConfiguration allows public ACLs or policies
         try :
@@ -45,8 +41,13 @@ def listPublicBuckets(log,session):
                     if(grantee=='http://acs.amazonaws.com/groups/global/AllUsers' or grantee=='http://acs.amazonaws.com/groups/global/AuthenticatedUsers'):
                         isACLPublic=True
                 if (isACLPublic):
-                    publicBuckets.append([bucket['Name'],'Public ACL'])
-
+                    publicBuckets.append({
+                        "name":bucket['Name'],
+                        "rational":"Public ACL",
+                        "service":"s3",
+                        "resourceType":"bucket",
+                        "arn":f"arn:aws:s3:::{bucket['Name']}"
+                        })
             except botocore.exceptions.ClientError as e :
                 code=e.response.get("Error").get("Code")
                 log.info(f"unexpected error with bucket {bucket['Name']}: {code}")
@@ -56,10 +57,27 @@ def listPublicBuckets(log,session):
             try:
                 policy=client.get_bucket_policy_status(Bucket=bucket['Name'])
                 if(policy['PolicyStatus']['IsPublic']):
-                    publicBuckets.append([bucket['Name'],'Public Policy'])
+                    publicBuckets.append({
+                        "name":bucket['Name'],
+                        "rational":"Public Policy",
+                        "service":"s3",
+                        "resourceType":"bucket",
+                        "arn":f"arn:aws:s3:::{bucket['Name']}"
+                        })
             except botocore.exceptions.ClientError as e :
                 code=e.response.get("Error").get("Code")
                 log.info(f"[listPublicBucket] Unexpected error with bucket {bucket['Name']}: {code}")
 
     log.info('[listPublicBucket] End')
     return publicBuckets
+
+
+def getBucketTags(log,session,bucket):
+    log.info("[getBucketTags] Start")
+    client = session.client('s3')
+    try:
+        response = client.get_bucket_tagging(Bucket=bucket["name"])
+        return response['TagSet']
+    except botocore.exceptions.ClientError as e :
+        log.info(f'[getBucketTags] unexpected error when looking for tag {e.response.get("Error")}')
+        return None
