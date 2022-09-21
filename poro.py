@@ -1,7 +1,7 @@
 from modules.public_buckets import listPublicBuckets
-from modules.public_api import listAPI
+from modules.public_api import *
 from modules.public_ec2 import listPublicEC2
-from modules.elb import getELB
+from modules.elb import *
 from modules.public_db import listPublicDB
 from modules.public_redshift import listPublicCluster
 import logging
@@ -11,11 +11,11 @@ import datetime
 import botocore
 
 
-def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
-    log.info(f'[printForRobots] Start')
+def list2Json(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
+    log.info(f'[list2Json] Start')
     key=kwarg.get('key',None)
     value=kwarg.get('value',None)
-    log.info(f'[printForRobots] tag is {key}:{value}')
+    log.info(f'[list2Json] tag is {key}:{value}')
     export={
         "Public buckets":[],
         "Public API":[],
@@ -27,7 +27,7 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
     try:
         account_id=session.client('sts').get_caller_identity().get('Account')
     except botocore.exceptions.ClientError as e :
-        log.info(f'[printForRobots] unexpected error when getting accoun id {e.response.get("Error")}')
+        log.info(f'[list2Json] unexpected error when getting accoun id {e.response.get("Error")}')
                 
     if buckets:
         for bucket in buckets:
@@ -41,7 +41,7 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                             if tag['Value']==value:
                                 bucket_tag=True
                 except botocore.exceptions.ClientError as e :
-                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                    log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public buckets"].append({
                     "Name":bucket[0],
                     "is Tagged":bucket_tag,
@@ -60,14 +60,14 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                 try:
                     api_arn='arn:aws:apigateway:us-west-2::/apis/'+api[0]
                     response=client.get_resources(ResourceARNList=[api_arn])
-                    log.info(f"[printForRobots] tag response for {api_arn} is {response}")
+                    log.info(f"[list2Json] tag response for {api_arn} is {response}")
                     if response['ResourceTagMappingList']:
                         for tag in response['ResourceTagMappingList'][0]['Tags']:
                             if tag['Key']==key:
                                 if tag['Value']==value:
                                     api_tag=True
                 except botocore.exceptions.ClientError as e :
-                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                    log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public API"].append({
                     "ID":api[0],
                     "Name":api[3],
@@ -95,13 +95,13 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                             ]
                         },
                     ])
-                    log.info(f"[printForRobots] tags for {ec2[0]} are {response['Tags']}")
+                    log.info(f"[list2Json] tags for {ec2[0]} are {response['Tags']}")
                     for tag in response['Tags']:
                             if tag['Key']==key:
                                 if tag['Value']==value:
                                     ec2_tag=True
                 except botocore.exceptions.ClientError as e :
-                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                    log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public EC2"].append({
                     "ID":ec2[0],
                     "Region":ec2[1][0],
@@ -123,14 +123,14 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                 elb_tag=False
                 try:
                     response=client.describe_tags(ResourceArns=[elb[0]])
-                    log.info(f"[printForRobots] tag response for {elb[0]} is {response}")
+                    log.info(f"[list2Json] tag response for {elb[0]} is {response}")
                     if response['TagDescriptions']:
                         for tag in response['TagDescriptions'][0]['Tags']:
                             if tag['Key']==key:
                                 if tag['Value']==value:
                                     elb_tag=True
                 except botocore.exceptions.ClientError as e :
-                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                    log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public ELB"].append({
                     "ARN":elb[0],
                     "DNS":elb[1][0],
@@ -154,14 +154,14 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                 try:
                     db_arn=f'arn:aws:rds:{db[1][0]}:{account_id}:db:{db[0]}'
                     response=client.list_tags_for_resource(ResourceName=db_arn)
-                    log.info(f"[printForRobots] tag response for {db[0]} is {response}")
+                    log.info(f"[list2Json] tag response for {db[0]} is {response}")
                     if response['TagList']:
                         for tag in response['TagList']:
                             if tag['Key']==key:
                                 if tag['Value']==value:
                                     rds_tag=True
                 except botocore.exceptions.ClientError as e :
-                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                    log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public RDS"].append({
                 "ID":db[0],
                 "Region":db[1][0],
@@ -183,14 +183,14 @@ def printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,**kwarg):
                 try:
                     rs_arn=f'arn:aws:redshift:{cluster[1][0]}:{account_id}:cluster:{cluster[0]}'
                     response=client.describe_tags(ResourceName=rs_arn)
-                    log.info(f"[printForRobots] tags for {cluster[0]} are {response['TaggedResources']}")
+                    log.info(f"[list2Json] tags for {cluster[0]} are {response['TaggedResources']}")
                     if response['TaggedResources']:
                         for tag in response['TaggedResources']['Tag']:
                             if tag['Key']==key:
                                 if tag['Value']==value:
                                     rs_tag=True
                 except botocore.exceptions.ClientError as e :
-                    log.info(f'[printForRobots] unexpected error when looking for tag {e.response.get("Error")}')
+                    log.info(f'[list2Json] unexpected error when looking for tag {e.response.get("Error")}')
                 export["Public Redshift clusters"].append({
                     "ID":cluster[0],
                     "Region":cluster[1][0],
@@ -250,32 +250,39 @@ def main():
     _||  _)  \\\  _) 
 
     """)
-    print(str(datetime.datetime.now().strftime("%X"))+' --- S3 buckets scan is starting')
-    buckets=listPublicBuckets(log,session)
+    # print(str(datetime.datetime.now().strftime("%X"))+' --- S3 buckets scan is starting')
+    # buckets=listPublicBuckets(log,session)
 
-    print(str(datetime.datetime.now().strftime("%X"))+' --- API Gateways scan is starting')
-    apis=listAPI(log,session)
+    # print(str(datetime.datetime.now().strftime("%X"))+' --- API Gateways scan is starting')
+    # apis=listAPI(log,session)
 
-    print(str(datetime.datetime.now().strftime("%X"))+' --- EC2 instances scan is starting')
-    ec2s=listPublicEC2(log,session)
+    # print(str(datetime.datetime.now().strftime("%X"))+' --- EC2 instances scan is starting')
+    # ec2s=listPublicEC2(log,session)
 
-    print(str(datetime.datetime.now().strftime("%X"))+' --- ELB scan is starting')
-    elbs=getELB(log,session)
+    # print(str(datetime.datetime.now().strftime("%X"))+' --- ELB scan is starting')
+    # elbs=getELB(log,session)
 
-    print(str(datetime.datetime.now().strftime("%X"))+' --- RDS scan is starting')
-    dbs=listPublicDB(log,session)
+    # print(str(datetime.datetime.now().strftime("%X"))+' --- RDS scan is starting')
+    # dbs=listPublicDB(log,session)
 
-    print(str(datetime.datetime.now().strftime("%X"))+' --- Redshift clusters scan is starting')
-    clusters=listPublicCluster(log,session)
+    # print(str(datetime.datetime.now().strftime("%X"))+' --- Redshift clusters scan is starting')
+    # clusters=listPublicCluster(log,session)
 
-    print(str(datetime.datetime.now().strftime("%X"))+' --- Formatting the scan results')        
-    if not args.file_name:
-        print(printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,key=key,value=value))
+    api={
+    'apiId': '8acsazdleg',
+    'region': 'us-west-2',
+    'endpoint': 'https://8acsazdleg.execute-api.us-west-2.amazonaws.com',
+    'routes': [{
+        'routeKey': 'POST /call_recording',
+        'integrationUri': 'arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:555773567328:function:production-call-service-call-recording:latest/invocations',
+        'integrationType': 'AWS_PROXY'
+    }],
+    'apiName': 'production-call-service-CallAssets-1O4NUDQ8GJVVD',
+    'service': 'apigatewayv2',
+    'arn': 'arn:aws:apigateway:us-west-2::/apis/8acsazdleg'
+}
+    print(getAPITags(log,session,api))
 
-    else:
-        f = open(args.file_name, "w")
-        f.write(str(printForRobots(log,session,buckets,apis,ec2s,elbs,dbs,clusters,key=key,value=value)))
-        f.close()
     return 1
 
 if __name__ == "__main__":

@@ -1,12 +1,6 @@
 import boto3
 import botocore
 from modules.test_endpoint import isEndPointUp
-import enlighten
-
-# Returns a list of public APIs
-# Takes a region as an argument
-# Return [{API gateway id:[endpoints]}]
-
 
 def listAPI(log,session):
     log.info('[listAPI] Start')
@@ -15,11 +9,7 @@ def listAPI(log,session):
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('apigateway')
-    log.debug(f'[listAPI] available regions: {available_regions}')
-    bar_format = '{desc}{desc_pad}{percentage:3.0f}%|{bar}| ' 
-    manager = enlighten.get_manager()
-    pbar = manager.counter(total=len(available_regions), desc=f'Scanning APIGW: ', bar_format=bar_format) 
-    
+    log.debug(f'[listAPI] available regions: {available_regions}')    
     for region in available_regions:    
         try: 
             # Get classic API gateway list
@@ -30,7 +20,7 @@ def listAPI(log,session):
                     stages=client.get_stages(restApiId=api.get("id")).get("item")
                     api_resources=client.get_resources(restApiId=api.get("id")).get('items')
                     log.debug(f'[listAPI] List of resources for restAPI {api.get("id")}: {api_resources}')
-                    endpoints=[]
+                    routes=[]
                     for stage in stages:
                         endpoint="https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+"/"
                         if isEndPointUp(log,endpoint):
@@ -39,17 +29,26 @@ def listAPI(log,session):
                                     if 'resourceMethods' in api_resource:
                                         for k in api_resource.get('resourceMethods'):
                                             integration=client.get_integration(restApiId=api.get("id"),resourceId=api_resource.get('id'),httpMethod=k)
-                                            endpoints.append({
-                                                "endpoint":k+" https://"+api.get("id")+".execute-api."+region+".amazonaws.com/"+stage.get("stageName")+api_resource.get('path'),
-                                                "integration type":integration.get('type'),
-                                                "integration uri":integration.get('uri')
+                                            routes.append({
+                                                "routeKey":k+" /"+stage.get("stageName")+api_resource.get('path'),
+                                                "integrationUri":integration.get('uri'),
+                                                "integrationType":integration.get('type')
                                             })
                             
-                            public_API.append([api.get("id"),region,endpoints,api.get("name")])
+                            public_API.append(
+                                {
+                                    "apiId":api.get("id"),
+                                    "region":region,
+                                    "apiName":api.get("name"),
+                                    "endpoint":"https://"+api.get("id")+".execute-api."+region+".amazonaws.com/",
+                                    "routes":routes,
+                                    "service":"apigateway",
+                                    "arn":f"arn:aws:apigateway:{region}::/restapis/{api.get('id')}"
+                                }
+                            )
  
         except botocore.exceptions.ClientError as e :
             log.info("[listAPI] Unexpected error when scanning apigateway in the region %s: %s" %(region, e.response['Error']['Message']))
-        pbar.update(1)
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('apigatewayv2')
@@ -59,23 +58,57 @@ def listAPI(log,session):
             # Get API v2 list
             client = session.client('apigatewayv2',region_name=region)
             APIs=client.get_apis().get("Items")
-            log.info(f"[listAPI] List APIs is: {APIs}")
+            log.debug(f"[listAPI] List APIs is: {APIs}")
             for api in APIs:
-                endpoints=[]
+                routes=[]
+                #---------
                 endpoint=api.get('ApiEndpoint')
-                routes=client.get_routes(ApiId=api.get("ApiId")).get('Items')
-                for route in routes:
-                    integration=client.get_integration(ApiId=api.get("ApiId"),IntegrationId=route.get('Target').split("/")[1]).get('IntegrationUri')
-                    endpoints.append({
-                                        "endpoint":api.get('ApiEndpoint'),
-                                        "routes":{
-                                            "routeKey":route.get('RouteKey'),
-                                            "integration":integration,
-                                        }
+                routesItems=client.get_routes(ApiId=api.get("ApiId")).get('Items')
+                for route in routesItems:
+                    integration=client.get_integration(ApiId=api.get("ApiId"),IntegrationId=route.get('Target').split("/")[1])
+                    routes.append({
+                                        "routeKey":route.get('RouteKey'),
+                                        "integrationUri":integration.get('IntegrationUri'),
+                                        "integrationType":integration.get('IntegrationType')
                                     })
-                public_API.append([api.get("ApiId"),region,endpoints,api.get("Name")])
+                public_API.append(
+                    {
+                        "apiId":api.get("ApiId"),
+                        "region":region,
+                        "endpoint":api.get('ApiEndpoint'),
+                        "routes":routes,
+                        "apiName":api.get("Name"),
+                        "service":"apigatewayv2",
+                        "arn":f"arn:aws:apigateway:{region}::/apis/{api.get('ApiId')}"
+                    }
+                )
         except botocore.exceptions.ClientError as e :
             log.info("[listAPI] Unexpected error when scanning apigatewayv2 in the region %s: %s" %(region, e.response['Error']['Message']))
 
     log.info('[listAPI] End')
     return public_API
+
+
+def getAPITags(log,session,api):
+    log.info("[getAPITags] Start")
+    if api["service"]=="apigateway":
+        client=session.client('resourcegroupstaggingapi',region_name=api["region"])
+        try:
+            response=client.get_resources(ResourceARNList=[api["arn"]])
+            log.debug(f"[getAPITags] tag response for {api['arn']} is {response}")
+            if response['ResourceTagMappingList']:
+                return response['ResourceTagMappingList'][0]['Tags']
+        except botocore.exceptions.ClientError as e :
+            log.info(f'[getAPITags] unexpected error when looking for tag {e.response.get("Error")}')
+            return None
+    elif api["service"]=="apigatewayv2":
+        client = session.client('apigatewayv2',region_name=api["region"])
+        try:
+            response=client.get_tags(ResourceArn=api["arn"])
+            log.debug(f"[getAPITags] tag response for {api['arn']} is {response}")
+            return response['Tags']
+        except botocore.exceptions.ClientError as e :
+            log.info(f'[getAPITags] unexpected error when looking for tag {e.response.get("Error")}')
+            return None
+    else:
+        return None

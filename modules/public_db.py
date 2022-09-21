@@ -1,6 +1,5 @@
 import boto3
 import botocore
-import enlighten
 
 # returns a list of publicly accessible EC2
 # returns [[DB Instance Identifier,[DB region,the attached public sg]]]
@@ -14,10 +13,7 @@ def listPublicDB(log,session):
 
     # Get available regions list 
     available_regions = boto3.Session().get_available_regions('rds')
-    bar_format = '{desc}{desc_pad}{percentage:3.0f}%|{bar}| ' 
-    manager = enlighten.get_manager()
-    pbar = manager.counter(total=len(available_regions), desc=f'Scanning RDS: ', bar_format=bar_format) 
-    
+
     # get RDS DBs list
     for region in available_regions:
         try:
@@ -50,6 +46,5 @@ def listPublicDB(log,session):
 
         except botocore.exceptions.ClientError as e :
             log.info("[listPublicDB] Unexpected error when scanning RDS in the region %s: %s" %(region, e.response['Error']['Message']))
-        pbar.update(1)
     log.info("[listPublicDB] End")
     return publicDB

@@ -1,5 +1,4 @@
 import botocore
-import enlighten
 
 # Returns a list of the names of public buckets and what makes them public in a form of a dict
 # returns [[bucket name, rational]]
@@ -15,9 +14,6 @@ def listPublicBuckets(log,session):
     response = client.list_buckets()
     buckets = response['Buckets']
     log.info(f'[listPublicBucket] number of buckets: {len(buckets)}')
-    bar_format = '{desc}{desc_pad}{percentage:3.0f}%|{bar}| ' 
-    manager = enlighten.get_manager()
-    pbar = manager.counter(total=len(buckets), desc='Scanning S3 buckets: ', bar_format=bar_format)
     for bucket in buckets :
         # Check if PublicAccessBlockConfiguration allows public ACLs or policies
         try :
@@ -64,7 +60,6 @@ def listPublicBuckets(log,session):
             except botocore.exceptions.ClientError as e :
                 code=e.response.get("Error").get("Code")
                 log.info(f"[listPublicBucket] Unexpected error with bucket {bucket['Name']}: {code}")
-        pbar.update(1)
 
     log.info('[listPublicBucket] End')
     return publicBuckets
