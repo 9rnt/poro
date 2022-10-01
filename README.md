@@ -25,6 +25,7 @@ Poro also check if a tag you specify is applied to identified public resources u
 ## Usage
 - Clone this repository
 - Configure your envionment with active credentials -> aws configure [sso]
+- pip install -r requirements.txt
 - Run python poro.py [-h] [--profile PROFILE] [--export FILE_NAME] [--verbose] [--tag-key KEY] [--tag-value VALUE]
 
       optional arguments:
