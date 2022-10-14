@@ -36,4 +36,4 @@ Poro also check if a tag you specify is applied to identified public resources u
       --tag-key KEY       Specify the tag key that you want to check if it exists in public resources
       --tag-value VALUE   Specify the tag value that you want to check if it exists in public resources
 
-Poro prints the scanning results at the end of it's execution in a json file if no export option is not specified.
+Poro prints the scanning results at the end of it's execution in a json file if export option is not specified.
